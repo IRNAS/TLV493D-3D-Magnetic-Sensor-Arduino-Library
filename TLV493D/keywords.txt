@@ -1,0 +1,36 @@
+#######################################
+# Syntax Coloring Map For TLV493D
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+TLV493D	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+init	KEYWORD2
+deinit	KEYWORD2
+update	KEYWORD2
+addr	KEYWORD2
+Bx	KEYWORD2
+By	KEYWORD2
+Bz	KEYWORD2
+Temp	KEYWORD2
+phi_xy	KEYWORD2
+phi_xz	KEYWORD2
+phi_yz	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+TLV493D	 KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+PRINT_RAW_VALUES	LITERAL1
