@@ -7,7 +7,7 @@ TLV493D senzor(2);
 void setup()
 {
   Serial.begin(115200); // Begin serial connection for debug.
-  senzor.init(LOW); // Initilize sensor.
+  senzor.init(HIGH); // Initilize sensor.
 }
 
 
