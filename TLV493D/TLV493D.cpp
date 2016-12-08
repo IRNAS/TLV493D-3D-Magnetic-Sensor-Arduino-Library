@@ -23,6 +23,7 @@ TLV493D::TLV493D(const int pwrPin) :
   }
 
   pinMode(m_iPwrPin, OUTPUT);
+  digitalWrite(m_iPwrPin, LOW);
 }
 
 TLV493D::~TLV493D()
