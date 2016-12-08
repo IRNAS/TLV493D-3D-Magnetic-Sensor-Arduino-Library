@@ -1,45 +1,46 @@
-/*   Infinenon 3D Magnetic I2c
-     TLV493D
-     Initial sketch by Mark J. Hughes for AllAboutCircuits.com
-     Modified and adapted for the OpenMagneticScanner by Trublion
-     jeremy@trublion.org
-*/
+#ifndef TLV493D_H
+#define TLV493D_H
 
-//#define TLV493D_PRINT_RAW_VALUES // uncomment for DEBUG
+#include "Arduino.h"
 
 class TLV493D
 {
   public:
 
-    TLV493D();
+    TLV493D(const int pwrPin);
     ~TLV493D();
 
-    void init();
+    void init(const int dataPinState = HIGH);
     void deinit();
     void update();
     
-    static const byte addr; // default address of magnetic sensor 0x5E, 0x3E or 0X1F
+    static const byte m_bAddr1; // address1
+    static const byte m_bAddr2; // address2
 
-    double Bx;
-    double By;
-    double Bz;
+    byte m_bAddr; // address being currently used
 
-    double Temp;
+    double m_dBx;
+    double m_dBy;
+    double m_dBz;
+    double m_dTemp;
 
-    double phi_xy;
-    double phi_yz;
-    double phi_xz;
-    double mag_2;
+    double m_dPhi_xy;
+    double m_dPhi_yz;
+    double m_dPhi_xz;
+    double m_dMag_2;
 
   private:
 
-    byte rbuffer[10]; // store data from sensor read register
+    int m_iPwrPin;
+    byte m_aBuffer[10]; // store data from sensor read register
 
-    static int decodeX(int a, int b);
-    static int decodeY(int a, int b);
-    static int decodeZ(int a, int b);
-    static int decodeT(int a, int b);
+    static int decodeX(const int a, const int b);
+    static int decodeY(const int a, const int b);
+    static int decodeZ(const int a, const int b);
+    static int decodeT(int a, const int b);
 
-    static double convertToMag(int a);
-    static double convertToCelsius(int a);
+    static double convertToMag(const int a);
+    static double convertToCelsius(const int a);
 };
+
+#endif

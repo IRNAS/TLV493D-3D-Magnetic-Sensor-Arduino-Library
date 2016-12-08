@@ -14,14 +14,31 @@ TLV493D	KEYWORD1
 init	KEYWORD2
 deinit	KEYWORD2
 update	KEYWORD2
-addr	KEYWORD2
-Bx	KEYWORD2
-By	KEYWORD2
-Bz	KEYWORD2
-Temp	KEYWORD2
-phi_xy	KEYWORD2
-phi_xz	KEYWORD2
-phi_yz	KEYWORD2
+
+decodeX	KEYWORD2
+decodeY	KEYWORD2
+decodeZ	KEYWORD2
+decodeT	KEYWORD2
+
+convertToMag	KEYWORD2
+convertToCelsius	KEYWORD2
+
+m_bAddr1	KEYWORD2
+m_bAddr2	KEYWORD2
+m_bAddr	KEYWORD2
+
+m_dBx	KEYWORD2
+m_dBy	KEYWORD2
+m_dBz	KEYWORD2
+m_dTemp	KEYWORD2
+
+m_dPhi_xy	KEYWORD2
+m_dPhi_xz	KEYWORD2
+m_dPhi_yz	KEYWORD2
+m_dMag_2	KEYWORD2
+
+m_iPwrPin	KEYWORD2
+m_aBuffer	KEYWORD2
 
 #######################################
 # Instances (KEYWORD2)

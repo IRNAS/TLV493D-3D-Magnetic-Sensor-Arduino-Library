@@ -1,34 +1,28 @@
-/*   Infinenon 3D Magnetic I2c
-     TLV493D
-     Initial sketch by Mark J. Hughes for AllAboutCircuits.com
-     Modified and adapted for the OpenMagneticScanner by Trublion
-     jeremy@trublion.org
-*/
-
-//--- Begin Includes ---//
 #include <I2C.h> // http://dsscircuits.com/articles/arduino-i2c-master-library
 #include "math.h"
 #include "TLV493D.h"
 
-// Variables
-const byte TLV493D::addr = 0x5E; // default address of magnetic sensor 0x5E, 0x3E or 0X1F
+const byte TLV493D::m_bAddr1 = 0x5E; // address1
+const byte TLV493D::m_bAddr2 = 0x1F; // address2
 
-TLV493D::TLV493D()
+TLV493D::TLV493D(const int pwrPin) :
+  m_iPwrPin(pwrPin),
+  m_bAddr(0),
+  m_dBx(0.0),
+  m_dBy(0.0),
+  m_dBz(0.0),
+  m_dTemp(0.0),
+  m_dPhi_xy(0.0),
+  m_dPhi_yz(0.0),
+  m_dPhi_xz(0.0),
+  m_dMag_2(0.0)
 {
-  Bx = 0.0;
-  By = 0.0;
-  Bz = 0.0;
-  Temp = 0.0;
-
-  phi_xy = 0.0;
-  phi_yz = 0.0;
-  phi_xz = 0.0;
-  mag_2 = 0.0;
-
   for (int i = 0; i < 10; i++)
   {
-    rbuffer[i] = 0x00;
+    m_aBuffer[i] = 0x00;
   }
+
+  pinMode(m_iPwrPin, OUTPUT);
 }
 
 TLV493D::~TLV493D()
@@ -36,67 +30,64 @@ TLV493D::~TLV493D()
   deinit();
 }
 
-void TLV493D::init()
+void TLV493D::init(const int dataPinState)
 {
+  // setup data pin
+  pinMode(A4, OUTPUT);
+  digitalWrite(A4, dataPinState);
+
+  digitalWrite(m_iPwrPin, HIGH);
+  delay(1);
+  
   I2c.begin(); // begin I2c communication
   I2c.timeOut(100);
-  I2c.write(addr, 0x00, 0x05);
+  m_bAddr = (dataPinState == HIGH) ? m_bAddr1 : m_bAddr2;
+  I2c.write(m_bAddr, 0x00, 0x05);
 }
 
 void TLV493D::deinit()
 {
   I2c.end();
+  digitalWrite(m_iPwrPin, LOW);
 }
 
 void TLV493D::update()
 {
   // read sensor registers and store in rbuffer
-  I2c.read(addr, 7);
+  I2c.read(m_bAddr, 7);
   
   for (int i = 0; i < 7; i++)
   {
-    rbuffer[i] = I2c.receive();
+    m_aBuffer[i] = I2c.receive();
   }
 
-  if (rbuffer[3] & B00000011 != 0)
+  if (m_aBuffer[3] & B00000011 != 0)
   {
     // if bits are not 0, TLV is still reading Bx, By, Bz, or T
     Serial.println("TLV493D data read error!");
   }
   else
   {
-    // Goto decode functions below
-    int x = decodeX(rbuffer[0], rbuffer[4]);
-    int y = decodeY(rbuffer[1], rbuffer[4]);
-    int z = decodeZ(rbuffer[2], rbuffer[5]);
-    int t = decodeT(rbuffer[3], rbuffer[6]);
+    int x = decodeX(m_aBuffer[0], m_aBuffer[4]);
+    int y = decodeY(m_aBuffer[1], m_aBuffer[4]);
+    int z = decodeZ(m_aBuffer[2], m_aBuffer[5]);
+    int t = decodeT(m_aBuffer[3], m_aBuffer[6]);
 
-    #ifdef TLV493D_PRINT_RAW_VALUES
-      Serial.print("TLV493D debug:");
-      Serial.print("\t");
-      Serial.print(x);
-      Serial.print("\t");
-      Serial.print(y);
-      Serial.print("\t");
-      Serial.print(z);
-      Serial.print("\t");
-      Serial.println(t);
-    #endif
+    m_dBx = convertToMag(x);
+    m_dBy = convertToMag(y);
+    m_dBz = convertToMag(z);
+    m_dTemp = convertToCelsius(t);
 
-    Bx = convertToMag(x);
-    By = convertToMag(y);
-    Bz = convertToMag(z);
-    Temp = convertToCelsius(t);
-
-    phi_xy = atan2(Bx, By);
-    phi_yz = atan2(By, Bz);
-    phi_xz = atan2(Bx, Bz);
-    mag_2 = Bx*Bx + By*By + Bz*Bz;
+    m_dPhi_xy = atan2(m_dBx, m_dBy);
+    m_dPhi_yz = atan2(m_dBy, m_dBz);
+    m_dPhi_xz = atan2(m_dBx, m_dBz);
+    m_dMag_2 = m_dBx * m_dBx + m_dBy * m_dBy + m_dBz * m_dBz;
   }
 }
 
-//-- Begin Buffer Decode Routines --//
-int TLV493D::decodeX(int a, int b)
+
+//-- Buffer Decode Routines --//
+int TLV493D::decodeX(const int a, const int b)
 {
   /* Shift all bits of register 0 to the left 4 positions.  Bit 8 becomes bit 12.  Bits 0:3 shift in as zero.
      Determine which of bits 4:7 of register 4 are high, shift them to the right four places -- remask in case
@@ -112,7 +103,7 @@ int TLV493D::decodeX(int a, int b)
   return ans;
 }
 
-int TLV493D::decodeY(int a, int b)
+int TLV493D::decodeY(const int a, const int b)
 {
   /* Shift all bits of register 1 to the left 4 positions.  Bit 8 becomes bit 12.  Bits 0-3 shift in as zero.
      Determine which of the first four bits of register 4 are true.  Add to previous answer.
@@ -126,7 +117,7 @@ int TLV493D::decodeY(int a, int b)
   return ans;
 }
 
-int TLV493D::decodeZ(int a, int b)
+int TLV493D::decodeZ(const int a, const int b)
 {
   /* Shift all bits of register 2 to the left 4 positions.  Bit 8 becomes bit 12.  Bits 0-3 are zero.
      Determine which of the first four bits of register 5 are true.  Add to previous answer.
@@ -139,7 +130,7 @@ int TLV493D::decodeZ(int a, int b)
   return ans;
 }
 
-int TLV493D::decodeT(int a, int b)
+int TLV493D::decodeT(int a, const int b)
 {
   /* Determine which of the last 4 bits of register 3 are true.  Shift all bits of register 3 to the left
      4 positions.  Bit 8 becomes bit 12.  Bits 0-3 are zero.
@@ -156,12 +147,12 @@ int TLV493D::decodeT(int a, int b)
 }
 
 
-double TLV493D::convertToMag(int a)
+double TLV493D::convertToMag(const int a)
 {
   return a * 0.098;
 }
 
-double TLV493D::convertToCelsius(int a)
+double TLV493D::convertToCelsius(const int a)
 {
   return (a - 320) * 1.1;
 }
