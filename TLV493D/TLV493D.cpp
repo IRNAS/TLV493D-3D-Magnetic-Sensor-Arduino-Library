@@ -63,7 +63,7 @@ void TLV493D::deinit()
   digitalWrite(m_iPwrPin, LOW);
 }
 
-void TLV493D::update()
+bool TLV493D::update()
 {
   // read sensor registers and store them in rbuffer
   I2c.read(m_bAddr, 7);
@@ -76,7 +76,8 @@ void TLV493D::update()
   if (m_aBuffer[3] & B00000011 != 0)
   {
     // if bits are not 0, TLV is still reading Bx, By, Bz, or T
-    Serial.println("TLV493D data read error!");
+    //Serial.println("TLV493D data read error!");
+	return false;
   }
   else
   {
@@ -97,6 +98,8 @@ void TLV493D::update()
     m_dPhi_yz = atan2(m_dBy, m_dBz);
     m_dPhi_xz = atan2(m_dBx, m_dBz);
     m_dMag_2 = m_dBx * m_dBx + m_dBy * m_dBy + m_dBz * m_dBz;
+	
+	return true;
   }
 }
 

@@ -15,7 +15,8 @@ class TLV493D
     // power off sensor
 	void deinit();
 	// measure new data
-    void update();
+	// returns true if data available
+    bool update();
     
     static const byte m_bAddr1; // address1
     static const byte m_bAddr2; // address2
