@@ -10,8 +10,11 @@ class TLV493D
     TLV493D(const int pwrPin);
     ~TLV493D();
 
+	// initialize sensor
     void init(const int dataPinState = HIGH);
-    void deinit();
+    // power off sensor
+	void deinit();
+	// measure new data
     void update();
     
     static const byte m_bAddr1; // address1
@@ -19,19 +22,19 @@ class TLV493D
 
     byte m_bAddr; // address being currently used
 
-    double m_dBx;
-    double m_dBy;
-    double m_dBz;
-    double m_dTemp;
+    double m_dBx; // magnetic field X component
+    double m_dBy; // magnetic field Y component
+    double m_dBz; // magnetic field Z component
+    double m_dTemp; // temperature of the sensor
 
-    double m_dPhi_xy;
-    double m_dPhi_yz;
-    double m_dPhi_xz;
-    double m_dMag_2;
+    double m_dPhi_xy; // angle in radians between magnetic field X and Y components
+    double m_dPhi_yz; // angle in radians between magnetic field Y and Z components
+    double m_dPhi_xz; // angle in radians between magnetic field X and Z components
+    double m_dMag_2; // square of the value of magnetic field flux density
 
   private:
 
-    int m_iPwrPin;
+    int m_iPwrPin; // sensor powered from this Arduino pin
     byte m_aBuffer[10]; // store data from sensor read register
 
     static int decodeX(const int a, const int b);
@@ -39,8 +42,8 @@ class TLV493D
     static int decodeZ(const int a, const int b);
     static int decodeT(int a, const int b);
 
-    static double convertToMag(const int a);
-    static double convertToCelsius(const int a);
+    static double convertToMag(const int a); // used for calculating size of each magnetic field components
+    static double convertToCelsius(const int a); // calculate temperature in deg. Celsius
 };
 
 #endif

@@ -17,44 +17,55 @@ TLV493D::TLV493D(const int pwrPin) :
   m_dPhi_xz(0.0),
   m_dMag_2(0.0)
 {
+  // clear read buffer
   for (int i = 0; i < 10; i++)
   {
     m_aBuffer[i] = 0x00;
   }
 
+  // initalize power pin
   pinMode(m_iPwrPin, OUTPUT);
+  // power down the sensor
   digitalWrite(m_iPwrPin, LOW);
 }
 
 TLV493D::~TLV493D()
 {
+  // power down the sensor
   deinit();
 }
 
 void TLV493D::init(const int dataPinState)
 {
-  // setup data pin
+  // setup data pin (A4 = I2C DATA)
   pinMode(A4, OUTPUT);
+  // voltage on data pin determins sensor address at power up
   digitalWrite(A4, dataPinState);
 
+  // power on the sensor
   digitalWrite(m_iPwrPin, HIGH);
+  // wait a little so that the sensor gets the right address
   delay(1);
   
   I2c.begin(); // begin I2c communication
   I2c.timeOut(100);
+  // choose the right address
   m_bAddr = (dataPinState == HIGH) ? m_bAddr1 : m_bAddr2;
+  // configure the sensor to start measuring
   I2c.write(m_bAddr, 0x00, 0x05);
 }
 
 void TLV493D::deinit()
 {
+  // stop communicating
   I2c.end();
+  // power down the sensor
   digitalWrite(m_iPwrPin, LOW);
 }
 
 void TLV493D::update()
 {
-  // read sensor registers and store in rbuffer
+  // read sensor registers and store them in rbuffer
   I2c.read(m_bAddr, 7);
   
   for (int i = 0; i < 7; i++)
@@ -69,16 +80,19 @@ void TLV493D::update()
   }
   else
   {
+    // decode read data
     int x = decodeX(m_aBuffer[0], m_aBuffer[4]);
     int y = decodeY(m_aBuffer[1], m_aBuffer[4]);
     int z = decodeZ(m_aBuffer[2], m_aBuffer[5]);
     int t = decodeT(m_aBuffer[3], m_aBuffer[6]);
 
+	// claculate magnetic field components and temperature
     m_dBx = convertToMag(x);
     m_dBy = convertToMag(y);
     m_dBz = convertToMag(z);
     m_dTemp = convertToCelsius(t);
 
+	// calculate angles and magnitude
     m_dPhi_xy = atan2(m_dBx, m_dBy);
     m_dPhi_yz = atan2(m_dBy, m_dBz);
     m_dPhi_xz = atan2(m_dBx, m_dBz);
