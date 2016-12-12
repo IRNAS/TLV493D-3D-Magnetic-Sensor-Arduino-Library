@@ -38,6 +38,8 @@ class TLV493D
     int m_iPwrPin; // sensor powered from this Arduino pin
     byte m_aBuffer[10]; // store data from sensor read register
 
+	static double atan2_remaped(double x, double y); // returns true angle in radians between 0 and 2PI
+	
     static int decodeX(const int a, const int b);
     static int decodeY(const int a, const int b);
     static int decodeZ(const int a, const int b);

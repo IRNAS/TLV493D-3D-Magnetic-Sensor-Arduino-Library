@@ -5,6 +5,30 @@
 const byte TLV493D::m_bAddr1 = 0x5E; // address1
 const byte TLV493D::m_bAddr2 = 0x1F; // address2
 
+// returns true angle in radians between 0 and 2PI
+double TLV493D::atan2_remaped(double x, double y)
+{
+	//if((x == 0.0) && (y == 0.0)) Serial.println("Error in atan2 function. Division by zero.");
+
+	if((x == 0.0) && (y == 0.0)) return 0.0;
+	
+	else if((x > 0.0) && (y == 0.0)) return 0.0;
+
+	else if((x > 0.0) && (y > 0.0)) return atan(y / x);
+
+	else if((x == 0.0) && (y > 0.0)) return M_PI_2;
+
+	else if((x < 0.0) && (y > 0.0)) return M_PI + atan(y / x);
+
+	else if((x < 0.0) && (y == 0.0)) return M_PI;
+
+	else if((x < 0.0) && (y < 0.0)) return M_PI + atan(y / x);
+
+	else if((x == 0.0) && (y < 0.0)) return 3.0 * M_PI_2;
+
+	else if((x > 0.0) && (y < 0.0)) return 2.0 * M_PI + atan(y / x);
+}
+
 TLV493D::TLV493D(const int pwrPin) :
   m_iPwrPin(pwrPin),
   m_bAddr(0),
@@ -94,9 +118,9 @@ bool TLV493D::update()
     m_dTemp = convertToCelsius(t);
 
 	// calculate angles and magnitude
-    m_dPhi_xy = atan2(m_dBx, m_dBy);
-    m_dPhi_yz = atan2(m_dBy, m_dBz);
-    m_dPhi_xz = atan2(m_dBx, m_dBz);
+    m_dPhi_xy = atan2_remaped(m_dBx, m_dBy);
+    m_dPhi_yz = atan2_remaped(m_dBy, m_dBz);
+    m_dPhi_xz = atan2_remaped(m_dBx, m_dBz);
     m_dMag_2 = m_dBx * m_dBx + m_dBy * m_dBy + m_dBz * m_dBz;
 	
 	return true;
