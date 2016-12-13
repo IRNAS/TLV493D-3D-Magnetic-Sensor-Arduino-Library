@@ -1,10 +1,16 @@
 #include "TLV493D.h"
 
 
-// Sensor powered from Arduino pin 2.
+/*! \var TLV493D sensor
+	\brief Sensor instance. Sensor powered from Arduino pin 2.
+*/
 TLV493D sensor(2);
 
 
+/*! \fn void setup()
+	\brief Arduino setup function.
+	\return Nothing.
+*/
 void setup()
 {
   Serial.begin(115200); // Begin serial connection for debug.
@@ -12,6 +18,10 @@ void setup()
 }
 
 
+/*! \fn void loop()
+	\brief Arduino loop function.
+	\return Nothing.
+*/
 void loop()
 {
   delay(1); // Wait time between reads.
