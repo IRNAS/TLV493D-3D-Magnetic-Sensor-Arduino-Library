@@ -5,9 +5,22 @@
      20160817
 */
 
-#include "TLV493D.hpp"
+#include "TLV493D.h"
 #include "Arduino.h"
 #include "Wire.h"
+#include "math.h"
+
+
+/*! \var const byte TLV493D::m_bAddr1
+	\brief Sensor m_bAddress1.
+*/
+const byte TLV493D::m_bAddr1 = 0x5E; // m_bAddress1
+
+
+/*! \var const byte TLV493D::m_bAddr2
+	\brief Sensor m_bAddress2.
+*/
+const byte TLV493D::m_bAddr2 = 0x1F; // m_bAddress2
 
 
 /*! \fn double TLV493D::atan2_remaped(double x, double y)
@@ -40,51 +53,94 @@ double TLV493D::atan2_remaped(double x, double y)
 }
 
 
+
+/*! \fn TLV493D::TLV493D(const int pwrPin)
+	\brief Constructor.
+    \param pwrPin Sensor powered from this Arduino pin.
+	\return Nothing.
+*/
+TLV493D::TLV493D() :
+  m_bAddr(0),
+  m_dBx(0.0),
+  m_dBy(0.0),
+  m_dBz(0.0),
+  m_dTemp(0.0),
+  m_dPhi_xy(0.0),
+  m_dPhi_yz(0.0),
+  m_dPhi_xz(0.0),
+  m_dMag_2(0.0)
+{
+  // clear read buffer
+  for (int i = 0; i < 10; i++)
+  {
+    m_rbuffer[i] = 0x00;
+  }
+
+  // clear write buffer
+  for (int i = 0; i < 4; i++)
+  {
+    m_wbuffer[i] = 0x00;
+  }
+}
+
+
+
+/*! \fn TLV493D::~TLV493D()
+	\brief Destructor.
+	\return Nothing.
+*/
+TLV493D::~TLV493D()
+{
+  deinit();
+}
+
+
+
 uint8_t TLV493D::init(int pwrPinLevel)
 {
   /* Read all registers, although only interested in configuration data
      stored in rbuffers 7,8,9, as 0-6 might be empty or invalid at the moment.
   */
 
-  addr = (pwrPinLevel == HIGH) ? addr1 : addr2;
+  m_bAddr = (pwrPinLevel == HIGH) ? m_bAddr1 : m_bAddr2;
 
-  uint8_t n_bytes_returned = Wire.requestFrom(addr, sizeof(rbuffer));
+  uint8_t n_bytes_returned = Wire.requestFrom(m_bAddr, sizeof(m_rbuffer));
   //Serial.print("Bytes returned: ");
   //Serial.println(n_bytes_returned);
-  if(n_bytes_returned != sizeof(rbuffer)) return 0x05;
+  if (n_bytes_returned != sizeof(m_rbuffer)) return 0x05;
 
-  for (int i = 0; i < sizeof(rbuffer); i++)
+  for (int i = 0; i < sizeof(m_rbuffer); i++)
   {
-    rbuffer[i] = Wire.read();
+    m_rbuffer[i] = Wire.read();
   }
 
   // Write Register 0H is non configurable.  Set all bits to 0
-  wbuffer[0] = B00000000;
+  m_wbuffer[0] = B00000000;
 
   // Read Register 7H 6:3 -> Write Register 1H 6:3
-  wbuffer[1] = rbuffer[7] & B01111000;
+  m_wbuffer[1] = m_rbuffer[7] & B01111000;
 
   // Read Register 8H 7:0 -> Write Register 2H 7:0
-  wbuffer[2] = rbuffer[8];
+  m_wbuffer[2] = m_rbuffer[8];
 
   // Read Register 9H 4:0 -> Write Register 3H 4:0 (Mod2)
-  wbuffer[3] = rbuffer[9] & B00001111;
+  m_wbuffer[3] = m_rbuffer[9] & B00001111;
 
   // Set Power Mode (ulpm, lpm, fm, pd)
-  for (int i = 0; i < sizeof(wbuffer); i++)
+  for (int i = 0; i < sizeof(m_wbuffer); i++)
   {
-    wbuffer[i] |= lpm[i];
+    m_wbuffer[i] |= m_lpm[i];
   }
 
-  Wire.beginTransmission(addr);
+  Wire.beginTransmission(m_bAddr);
 
   uint8_t n_bytes_written;
-  for (int i = 0; i < sizeof(wbuffer); i++)
+  for (int i = 0; i < sizeof(m_wbuffer); i++)
   {
-    n_bytes_written = Wire.write(wbuffer[i]);
+    n_bytes_written = Wire.write(m_wbuffer[i]);
     //Serial.print("Bytes written: ");
     //Serial.println(n_bytes_written);
-    if(n_bytes_written != 1) return 0x06;
+    if (n_bytes_written != 1) return 0x06;
   }
 
   uint8_t write_status = Wire.endTransmission();
@@ -95,25 +151,46 @@ uint8_t TLV493D::init(int pwrPinLevel)
 }
 
 
+/*! \fn void TLV493D::deinit()
+	\brief Powers off the sensor.
+    \return Nothing.
+*/
+void TLV493D::deinit()
+{
+}
+
+
 uint8_t TLV493D::update()
 {
   // Read sensor registers and store in rbuffer
-  uint8_t n_bytes_returned = Wire.requestFrom(addr, sizeof(rbuffer));
+  uint8_t n_bytes_returned = Wire.requestFrom(m_bAddr, sizeof(m_rbuffer));
   //Serial.print("Bytes returned: ");
   //Serial.println(n_bytes_returned);
 
-  for (int i = 0; i < sizeof(rbuffer); i++)
+  for (int i = 0; i < sizeof(m_rbuffer); i++)
   {
-    rbuffer[i] = Wire.read();
+    m_rbuffer[i] = Wire.read();
   }
 
   // Goto decode functions below
-  x = decodeX(rbuffer[0], rbuffer[4]);
-  y = decodeY(rbuffer[1], rbuffer[4]);
-  z = decodeZ(rbuffer[2], rbuffer[5]);
-  t = decodeT(rbuffer[3], rbuffer[6]);
+  int x = decodeX(m_rbuffer[0], m_rbuffer[4]);
+  int y = decodeY(m_rbuffer[1], m_rbuffer[4]);
+  int z = decodeZ(m_rbuffer[2], m_rbuffer[5]);
+  int t = decodeT(m_rbuffer[3], m_rbuffer[6]);
 
-  if (rbuffer[3] & B00000011 != 0)
+  // claculate magnetic field components and temperature
+  m_dBx = convertToMag(x);
+  m_dBy = convertToMag(y);
+  m_dBz = convertToMag(z);
+  m_dTemp = convertToCelsius(t);
+
+  // calculate angles and magnitude
+  m_dPhi_xy = atan2_remaped(m_dBx, m_dBy);
+  m_dPhi_yz = atan2_remaped(m_dBy, m_dBz);
+  m_dPhi_xz = atan2_remaped(m_dBx, m_dBz);
+  m_dMag_2 = m_dBx * m_dBx + m_dBy * m_dBy + m_dBz * m_dBz;
+
+  if (m_rbuffer[3] & B00000011 != 0)
   {
     // If bits are not 0, TLV is still reading Bx, By, Bz, or T
     return 0x01;

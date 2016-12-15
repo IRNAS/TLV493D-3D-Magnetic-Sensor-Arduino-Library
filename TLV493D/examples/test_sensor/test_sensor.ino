@@ -1,5 +1,5 @@
 #include "Wire.h"
-#include "TLV493D.hpp"
+#include "TLV493D.h"
 
 TLV493D sensor1;
 TLV493D sensor2;
@@ -61,17 +61,21 @@ void loop()
   }
   else
   {
-    //Serial.print(sensor.convertToMag(sensor.x));
-    Serial.print(sensor1.convertToMag(sensor1.x));
+    Serial.print(sensor1.m_dBx);
     Serial.print("\t");
-    //Serial.print(sensor.convertToMag(sensor.y));
-    Serial.print(sensor1.convertToMag(sensor1.y));
+    Serial.print(sensor1.m_dBy);
     Serial.print("\t");
-    //Serial.print(sensor.convertToMag(sensor.z));
-    Serial.print(sensor1.convertToMag(sensor1.z));
+    Serial.print(sensor1.m_dBz);
     Serial.print("\t");
-    //Serial.println(sensor.convertToCelsius(sensor.t));
-    Serial.println(sensor1.convertToCelsius(sensor1.t));
+    Serial.println(sensor1.m_dTemp);
+
+    Serial.print(sensor1.m_dPhi_xy);
+    Serial.print("\t");
+    Serial.print(sensor1.m_dPhi_yz);
+    Serial.print("\t");
+    Serial.print(sensor1.m_dPhi_xz);
+    Serial.print("\t");
+    Serial.println(sensor1.m_dMag_2);
   }
 
 
@@ -85,16 +89,20 @@ void loop()
   }
   else
   {
-    //Serial.print(sensor.convertToMag(sensor.x));
-    Serial.print(sensor2.convertToMag(sensor2.x));
+    Serial.print(sensor2.m_dBx);
     Serial.print("\t");
-    //Serial.print(sensor.convertToMag(sensor.y));
-    Serial.print(sensor2.convertToMag(sensor2.y));
+    Serial.print(sensor2.m_dBy);
     Serial.print("\t");
-    //Serial.print(sensor.convertToMag(sensor.z));
-    Serial.print(sensor2.convertToMag(sensor2.z));
+    Serial.print(sensor2.m_dBz);
     Serial.print("\t");
-    //Serial.println(sensor.convertToCelsius(sensor.t));
-    Serial.println(sensor2.convertToCelsius(sensor2.t));
+    Serial.println(sensor2.m_dTemp);
+
+    Serial.print(sensor2.m_dPhi_xy);
+    Serial.print("\t");
+    Serial.print(sensor2.m_dPhi_yz);
+    Serial.print("\t");
+    Serial.print(sensor2.m_dPhi_xz);
+    Serial.print("\t");
+    Serial.println(sensor2.m_dMag_2);
   }
 }
