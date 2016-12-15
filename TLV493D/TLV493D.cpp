@@ -1,18 +1,13 @@
-#include <I2C.h> // http://dsscircuits.com/articles/arduino-i2c-master-library
-#include "math.h"
-#include "TLV493D.h"
-
-
-/*! \var const byte TLV493D::m_bAddr1
-	\brief Sensor address1.
+/*   Infinenon 3D Magnetic I2C
+     TLV493D
+     by Mark J. Hughes
+     for AllAboutCircuits.com
+     20160817
 */
-const byte TLV493D::m_bAddr1 = 0x5E; // address1
 
-
-/*! \var const byte TLV493D::m_bAddr2
-	\brief Sensor address2.
-*/
-const byte TLV493D::m_bAddr2 = 0x1F; // address2
+#include "TLV493D.hpp"
+#include "Arduino.h"
+#include "Wire.h"
 
 
 /*! \fn double TLV493D::atan2_remaped(double x, double y)
@@ -23,153 +18,114 @@ const byte TLV493D::m_bAddr2 = 0x1F; // address2
 */
 double TLV493D::atan2_remaped(double x, double y)
 {
-	//if((x == 0.0) && (y == 0.0)) Serial.println("Error in atan2 function. Division by zero.");
+  //if((x == 0.0) && (y == 0.0)) Serial.println("Error in atan2 function. Division by zero.");
 
-	if((x == 0.0) && (y == 0.0)) return 0.0;
-	
-	else if((x > 0.0) && (y == 0.0)) return 0.0;
+  if ((x == 0.0) && (y == 0.0)) return 0.0;
 
-	else if((x > 0.0) && (y > 0.0)) return atan(y / x);
+  else if ((x > 0.0) && (y == 0.0)) return 0.0;
 
-	else if((x == 0.0) && (y > 0.0)) return M_PI_2;
+  else if ((x > 0.0) && (y > 0.0)) return atan(y / x);
 
-	else if((x < 0.0) && (y > 0.0)) return M_PI + atan(y / x);
+  else if ((x == 0.0) && (y > 0.0)) return M_PI_2;
 
-	else if((x < 0.0) && (y == 0.0)) return M_PI;
+  else if ((x < 0.0) && (y > 0.0)) return M_PI + atan(y / x);
 
-	else if((x < 0.0) && (y < 0.0)) return M_PI + atan(y / x);
+  else if ((x < 0.0) && (y == 0.0)) return M_PI;
 
-	else if((x == 0.0) && (y < 0.0)) return 3.0 * M_PI_2;
+  else if ((x < 0.0) && (y < 0.0)) return M_PI + atan(y / x);
 
-	else if((x > 0.0) && (y < 0.0)) return 2.0 * M_PI + atan(y / x);
+  else if ((x == 0.0) && (y < 0.0)) return 3.0 * M_PI_2;
+
+  else if ((x > 0.0) && (y < 0.0)) return 2.0 * M_PI + atan(y / x);
 }
 
 
-/*! \fn TLV493D::TLV493D(const int pwrPin)
-	\brief Constructor.
-    \param pwrPin Sensor powered from this Arduino pin.
-	\return Nothing.
-*/
-TLV493D::TLV493D(const int pwrPin) :
-  m_iPwrPin(pwrPin),
-  m_bAddr(0),
-  m_dBx(0.0),
-  m_dBy(0.0),
-  m_dBz(0.0),
-  m_dTemp(0.0),
-  m_dPhi_xy(0.0),
-  m_dPhi_yz(0.0),
-  m_dPhi_xz(0.0),
-  m_dMag_2(0.0)
+uint8_t TLV493D::init(int pwrPinLevel)
 {
-  // clear read buffer
-  for (int i = 0; i < 10; i++)
+  /* Read all registers, although only interested in configuration data
+     stored in rbuffers 7,8,9, as 0-6 might be empty or invalid at the moment.
+  */
+
+  addr = (pwrPinLevel == HIGH) ? addr1 : addr2;
+
+  uint8_t n_bytes_returned = Wire.requestFrom(addr, sizeof(rbuffer));
+  //Serial.print("Bytes returned: ");
+  //Serial.println(n_bytes_returned);
+  if(n_bytes_returned != sizeof(rbuffer)) return 0x05;
+
+  for (int i = 0; i < sizeof(rbuffer); i++)
   {
-    m_aBuffer[i] = 0x00;
+    rbuffer[i] = Wire.read();
   }
 
-  // initalize power pin
-  pinMode(m_iPwrPin, OUTPUT);
-  // power down the sensor
-  digitalWrite(m_iPwrPin, LOW);
-}
+  // Write Register 0H is non configurable.  Set all bits to 0
+  wbuffer[0] = B00000000;
 
+  // Read Register 7H 6:3 -> Write Register 1H 6:3
+  wbuffer[1] = rbuffer[7] & B01111000;
 
-/*! \fn TLV493D::~TLV493D()
-	\brief Destructor.
-	\return Nothing.
-*/
-TLV493D::~TLV493D()
-{
-  // power down the sensor
-  deinit();
-}
+  // Read Register 8H 7:0 -> Write Register 2H 7:0
+  wbuffer[2] = rbuffer[8];
 
+  // Read Register 9H 4:0 -> Write Register 3H 4:0 (Mod2)
+  wbuffer[3] = rbuffer[9] & B00001111;
 
-/*! \fn void TLV493D::init(const int dataPinState)
-	\brief Powers on and initializes the sensor.
-    \param dataPinState Voltage level on I2C data pin at power up.
-	\return Nothing.
-*/
-void TLV493D::init(const int dataPinState)
-{
-  // setup data pin (A4 = I2C DATA)
-  pinMode(A4, OUTPUT);
-  // voltage on data pin determins sensor address at power up
-  digitalWrite(A4, dataPinState);
-
-  // power on the sensor
-  digitalWrite(m_iPwrPin, HIGH);
-  // wait a little so that the sensor gets the right address
-  delay(1);
-  
-  // begin I2c communication
-  I2c.begin();
-  I2c.timeOut(100);
-  // choose the right address
-  m_bAddr = (dataPinState == HIGH) ? m_bAddr1 : m_bAddr2;
-  // configure the sensor to start measuring
-  I2c.write(m_bAddr, 0x00, 0x05);
-}
-
-
-/*! \fn void TLV493D::deinit()
-	\brief Powers off the sensor.
-    \return Nothing.
-*/
-void TLV493D::deinit()
-{
-  // stop communicating
-  I2c.end();
-  // power down the sensor
-  digitalWrite(m_iPwrPin, LOW);
-}
-
-
-/*! \fn bool TLV493D::update()
-	\brief Measure new data.
-    \return Returns true if data available.
-*/
-bool TLV493D::update()
-{
-  // read sensor registers
-  I2c.read(m_bAddr, 7);
-  
-  // and store them in rbuffer
-  for (int i = 0; i < 7; i++)
+  // Set Power Mode (ulpm, lpm, fm, pd)
+  for (int i = 0; i < sizeof(wbuffer); i++)
   {
-    m_aBuffer[i] = I2c.receive();
+    wbuffer[i] |= lpm[i];
   }
 
-  // if bits are not 0, TLV is still reading Bx, By, Bz, or T
-  if (m_aBuffer[3] & B00000011 != 0)
+  Wire.beginTransmission(addr);
+
+  uint8_t n_bytes_written;
+  for (int i = 0; i < sizeof(wbuffer); i++)
   {
-    //Serial.println("TLV493D data read error!");
-	return false;
+    n_bytes_written = Wire.write(wbuffer[i]);
+    //Serial.print("Bytes written: ");
+    //Serial.println(n_bytes_written);
+    if(n_bytes_written != 1) return 0x06;
+  }
+
+  uint8_t write_status = Wire.endTransmission();
+  //Serial.print("Write status: 0x");
+  //Serial.println(write_status, HEX);
+
+  return write_status;
+}
+
+
+uint8_t TLV493D::update()
+{
+  // Read sensor registers and store in rbuffer
+  uint8_t n_bytes_returned = Wire.requestFrom(addr, sizeof(rbuffer));
+  //Serial.print("Bytes returned: ");
+  //Serial.println(n_bytes_returned);
+
+  for (int i = 0; i < sizeof(rbuffer); i++)
+  {
+    rbuffer[i] = Wire.read();
+  }
+
+  // Goto decode functions below
+  x = decodeX(rbuffer[0], rbuffer[4]);
+  y = decodeY(rbuffer[1], rbuffer[4]);
+  z = decodeZ(rbuffer[2], rbuffer[5]);
+  t = decodeT(rbuffer[3], rbuffer[6]);
+
+  if (rbuffer[3] & B00000011 != 0)
+  {
+    // If bits are not 0, TLV is still reading Bx, By, Bz, or T
+    return 0x01;
   }
   else
   {
-    // decode read data
-    int x = decodeX(m_aBuffer[0], m_aBuffer[4]);
-    int y = decodeY(m_aBuffer[1], m_aBuffer[4]);
-    int z = decodeZ(m_aBuffer[2], m_aBuffer[5]);
-    int t = decodeT(m_aBuffer[3], m_aBuffer[6]);
-
-	// claculate magnetic field components and temperature
-    m_dBx = convertToMag(x);
-    m_dBy = convertToMag(y);
-    m_dBz = convertToMag(z);
-    m_dTemp = convertToCelsius(t);
-
-	// calculate angles and magnitude
-    m_dPhi_xy = atan2_remaped(m_dBx, m_dBy);
-    m_dPhi_yz = atan2_remaped(m_dBy, m_dBz);
-    m_dPhi_xz = atan2_remaped(m_dBx, m_dBz);
-    m_dMag_2 = m_dBx * m_dBx + m_dBy * m_dBy + m_dBz * m_dBz;
-	
-	return true;
+    return 0x00;
   }
 }
+
+
+
 
 
 /*! \fn int TLV493D::decodeX(const int a, const int b)
