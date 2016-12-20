@@ -38,12 +38,12 @@ class TLV493D
     uint8_t m_wbuffer[4];  ///< store data for sensor write registers.
 
     /*
-    	Mode 1 is the second write register
+    	Mode 1 is the second write register:
     	Mode1_Int   Bxxxxx1xx  Interrupt Enable "1" / Disable "0"
     	Mode1_Fast  Bxxxxxx1x  Fast Mode Enable "1" / Disable "0" must be 0 for power down
     	Mode1_Low   Bxxxxxxx1  Low Power Mode Enable "1" / Disable "0"
 
-    	Mode 2 is the fourth write register
+    	Mode 2 is the fourth write register:
     	Mode2_T     B1xxxxxxx  Temperature Measurement Enable "1" / Disable "0"
     	Mode2_LP    Bx1xxxxxx  LP Period "1" = 12ms / "0"=100ms
     	Mode2_PT    Bxx1xxxxx  Parity test Enable "1" / Disable "0"
@@ -51,10 +51,10 @@ class TLV493D
 
     //     Example settings for Ultra-Low Power, Low Power, Fast Mode, and Power Down.
     //                        Reg 1      Reg 2      Reg 3      Reg 4
-    const uint8_t m_ulpm[4] = { B0000000, B0000001, B0000000, B10000000 }; // ultra low power mode
-    const uint8_t m_lpm[4]  = { B0000000, B0000001, B0000000, B11000000 }; // low power mode //<--
-    const uint8_t m_fm[4]   = { B0000000, B0000010, B0000000, B10000000 }; // fast mode (unsupported)
-    const uint8_t m_pd[4]   = { B0000000, B0000001, B0000000, B00000000 }; // power down mode.
+    const uint8_t m_ulpm[4] = { B0000000, B0000001, B0000000, B10000000 }; ///< Ultra low power mode
+    const uint8_t m_lpm[4]  = { B0000000, B0000001, B0000000, B11000000 }; ///< Low power mode //<--
+    const uint8_t m_fm[4]   = { B0000000, B0000010, B0000000, B10000000 }; ///< Fast mode (unsupported)
+    const uint8_t m_pd[4]   = { B0000000, B0000001, B0000000, B00000000 }; ///< Power down mode.
 
 
   public:
@@ -65,15 +65,19 @@ class TLV493D
     // Destructor
     ~TLV493D();
 
+	// Initializes the sensor
     uint8_t init(int pwrPinLevel);
 
+	// Deinitializes the sensor
     void deinit();
 
+	// Reads new data from the sensor.
     uint8_t update();
 
 
   private:
 
+	// Decodes data in read buffer
     static int decodeX(int a, int b);
     static int decodeY(int a, int b);
     static int decodeZ(int a, int b);
@@ -84,6 +88,7 @@ class TLV493D
     // Calculate temperature in degrees Celsius
     static double convertToCelsius(const int a);
 
+	// Calculates angle in radians between 0 and 2PI
     static double atan2_remaped(double x, double y);
 };
 

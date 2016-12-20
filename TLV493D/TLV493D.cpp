@@ -70,13 +70,13 @@ TLV493D::TLV493D() :
   m_dPhi_xz(0.0),
   m_dMag_2(0.0)
 {
-  // clear read buffer
+  // Clear read buffer.
   for (int i = 0; i < 10; i++)
   {
     m_rbuffer[i] = 0x00;
   }
 
-  // clear write buffer
+  // Clear write buffer.
   for (int i = 0; i < 4; i++)
   {
     m_wbuffer[i] = 0x00;
@@ -96,6 +96,10 @@ TLV493D::~TLV493D()
 
 
 
+/*! \fn uint8_t TLV493D::init(int pwrPinLevel)
+	\brief Initalizes the sensor.
+	\return Status.
+*/
 uint8_t TLV493D::init(int pwrPinLevel)
 {
   /* Read all registers, although only interested in configuration data
@@ -114,24 +118,25 @@ uint8_t TLV493D::init(int pwrPinLevel)
     m_rbuffer[i] = Wire.read();
   }
 
-  // Write Register 0H is non configurable.  Set all bits to 0
+  // Write Register 0H is non configurable.  Set all bits to 0.
   m_wbuffer[0] = B00000000;
 
-  // Read Register 7H 6:3 -> Write Register 1H 6:3
+  // Read Register 7H 6:3 -> Write Register 1H 6:3.
   m_wbuffer[1] = m_rbuffer[7] & B01111000;
 
-  // Read Register 8H 7:0 -> Write Register 2H 7:0
+  // Read Register 8H 7:0 -> Write Register 2H 7:0.
   m_wbuffer[2] = m_rbuffer[8];
 
-  // Read Register 9H 4:0 -> Write Register 3H 4:0 (Mod2)
+  // Read Register 9H 4:0 -> Write Register 3H 4:0 (Mod2).
   m_wbuffer[3] = m_rbuffer[9] & B00001111;
 
-  // Set Power Mode (ulpm, lpm, fm, pd)
+  // Set Power Mode (ulpm, lpm, fm, pd).
   for (int i = 0; i < sizeof(m_wbuffer); i++)
   {
     m_wbuffer[i] |= m_lpm[i];
   }
 
+  // Join the I2C bus.
   Wire.beginTransmission(m_bAddr);
 
   uint8_t n_bytes_written;
@@ -152,7 +157,7 @@ uint8_t TLV493D::init(int pwrPinLevel)
 
 
 /*! \fn void TLV493D::deinit()
-	\brief Powers off the sensor.
+	\brief Deinitializes the sensor. Currently empty function.
     \return Nothing.
 */
 void TLV493D::deinit()
@@ -160,6 +165,10 @@ void TLV493D::deinit()
 }
 
 
+/*! \fn uint8_t TLV493D::update()
+	\brief Reads new data from the sensor.
+    \return Status.
+*/
 uint8_t TLV493D::update()
 {
   // Read sensor registers and store in rbuffer
@@ -200,8 +209,6 @@ uint8_t TLV493D::update()
     return 0x00;
   }
 }
-
-
 
 
 

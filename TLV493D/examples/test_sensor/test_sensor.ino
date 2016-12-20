@@ -1,5 +1,5 @@
-#include "Wire.h"
 #include "TLV493D.h"
+#include "Wire.h"
 
 TLV493D sensor1;
 TLV493D sensor2;
@@ -11,7 +11,7 @@ const int i2c_sda = A4;
 
 void setup()
 {
-  Serial.begin(115200);      // Begin serial connection for debug.
+  Serial.begin(115200);
 
   pinMode(sensor1_pwr_pin, OUTPUT);
   pinMode(sensor2_pwr_pin, OUTPUT);
@@ -46,63 +46,43 @@ void setup()
   Serial.println(sensor2.init(HIGH), HEX);
 }
 
-
 void loop()
 {
-  delay(200); // wait time between reads.
+  sensor1.update();
+  Serial.println("sensor1:");
 
-  Serial.println("Updating sensor 1.");
-  uint8_t read_status1 = sensor1.update();
-  if (read_status1 != 0)
-  {
-    // If bits are not 0, TLV is still reading Bx, By, Bz, or T
-    Serial.print("Data read error: 0x");
-    Serial.println(read_status1, HEX);
-  }
-  else
-  {
-    Serial.print(sensor1.m_dBx);
-    Serial.print("\t");
-    Serial.print(sensor1.m_dBy);
-    Serial.print("\t");
-    Serial.print(sensor1.m_dBz);
-    Serial.print("\t");
-    Serial.println(sensor1.m_dTemp);
+  Serial.print(sensor1.m_dBx);
+  Serial.print(";");//\t");
+  Serial.print(sensor1.m_dBy);
+  Serial.print(";");//\t");
+  Serial.print(sensor1.m_dBz);
+  Serial.print(";");//\t");
+  Serial.println(sensor1.m_dTemp);
 
-    Serial.print(sensor1.m_dPhi_xy);
-    Serial.print("\t");
-    Serial.print(sensor1.m_dPhi_yz);
-    Serial.print("\t");
-    Serial.print(sensor1.m_dPhi_xz);
-    Serial.print("\t");
-    Serial.println(sensor1.m_dMag_2);
-  }
+  Serial.print(sensor1.m_dPhi_xy);
+  Serial.print(";");//\t");
+  Serial.print(sensor1.m_dPhi_yz);
+  Serial.print(";");//\t");
+  Serial.print(sensor1.m_dPhi_xz);
+  Serial.print(";");//\t");
+  Serial.println(sensor1.m_dMag_2);
 
+  sensor2.update();
+  Serial.println("sensor2:");
 
-  Serial.println("Updating sensor 2.");
-  uint8_t read_status2 = sensor2.update();
-  if (read_status2 != 0)
-  {
-    // If bits are not 0, TLV is still reading Bx, By, Bz, or T
-    Serial.print("Data read error: 0x");
-    Serial.println(read_status2, HEX);
-  }
-  else
-  {
-    Serial.print(sensor2.m_dBx);
-    Serial.print("\t");
-    Serial.print(sensor2.m_dBy);
-    Serial.print("\t");
-    Serial.print(sensor2.m_dBz);
-    Serial.print("\t");
-    Serial.println(sensor2.m_dTemp);
+  Serial.print(sensor2.m_dBx);
+  Serial.print(";");//\t");
+  Serial.print(sensor2.m_dBy);
+  Serial.print(";");//\t");
+  Serial.print(sensor2.m_dBz);
+  Serial.print(";");//\t");
+  Serial.println(sensor2.m_dTemp);
 
-    Serial.print(sensor2.m_dPhi_xy);
-    Serial.print("\t");
-    Serial.print(sensor2.m_dPhi_yz);
-    Serial.print("\t");
-    Serial.print(sensor2.m_dPhi_xz);
-    Serial.print("\t");
-    Serial.println(sensor2.m_dMag_2);
-  }
+  Serial.print(sensor2.m_dPhi_xy);
+  Serial.print(";");//\t");
+  Serial.print(sensor2.m_dPhi_yz);
+  Serial.print(";");//\t");
+  Serial.print(sensor2.m_dPhi_xz);
+  Serial.print(";");//\t");
+  Serial.println(sensor2.m_dMag_2);
 }
