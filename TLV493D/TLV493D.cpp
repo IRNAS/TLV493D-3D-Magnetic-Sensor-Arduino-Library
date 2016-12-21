@@ -96,6 +96,27 @@ TLV493D::~TLV493D()
 
 
 
+/*! \fn void TLV493D::dump_registers()
+  \brief Prints content of all registers.
+  \return Nothing.
+*/
+void TLV493D::dump_registers()
+{
+  Serial.println("Dumping read buffer:");
+  for (int i = 0; i < sizeof(m_rbuffer); i++)
+  {
+    Serial.println(m_rbuffer[i]);
+  }
+
+  Serial.println("Dumping write buffer:");
+  for (int i = 0; i < sizeof(m_wbuffer); i++)
+  {
+    Serial.println(m_wbuffer[i]);
+  }
+}
+
+
+
 /*! \fn uint8_t TLV493D::init(int pwrPinLevel)
 	\brief Initalizes the sensor.
 	\return Status.
@@ -109,14 +130,16 @@ uint8_t TLV493D::init(int pwrPinLevel)
   m_bAddr = (pwrPinLevel == HIGH) ? m_bAddr1 : m_bAddr2;
 
   uint8_t n_bytes_returned = Wire.requestFrom(m_bAddr, sizeof(m_rbuffer));
-  //Serial.print("Bytes returned: ");
-  //Serial.println(n_bytes_returned);
+//  Serial.print("Bytes returned: ");
+//  Serial.println(n_bytes_returned);
   if (n_bytes_returned != sizeof(m_rbuffer)) return 0x05;
 
   for (int i = 0; i < sizeof(m_rbuffer); i++)
   {
     m_rbuffer[i] = Wire.read();
   }
+
+//  dump_registers();
 
   // Write Register 0H is non configurable.  Set all bits to 0.
   m_wbuffer[0] = B00000000;
@@ -136,21 +159,21 @@ uint8_t TLV493D::init(int pwrPinLevel)
     m_wbuffer[i] |= m_lpm[i];
   }
 
-  // Join the I2C bus.
+  // Write to registers.
   Wire.beginTransmission(m_bAddr);
 
   uint8_t n_bytes_written;
   for (int i = 0; i < sizeof(m_wbuffer); i++)
   {
     n_bytes_written = Wire.write(m_wbuffer[i]);
-    //Serial.print("Bytes written: ");
-    //Serial.println(n_bytes_written);
+//    Serial.print("Bytes written: ");
+//    Serial.println(n_bytes_written);
     if (n_bytes_written != 1) return 0x06;
   }
 
   uint8_t write_status = Wire.endTransmission();
-  //Serial.print("Write status: 0x");
-  //Serial.println(write_status, HEX);
+//  Serial.print("Write status: 0x");
+//  Serial.println(write_status, HEX);
 
   return write_status;
 }
@@ -175,6 +198,7 @@ uint8_t TLV493D::update()
   uint8_t n_bytes_returned = Wire.requestFrom(m_bAddr, sizeof(m_rbuffer));
   //Serial.print("Bytes returned: ");
   //Serial.println(n_bytes_returned);
+  if (n_bytes_returned != sizeof(m_rbuffer)) return 0x01;
 
   for (int i = 0; i < sizeof(m_rbuffer); i++)
   {
@@ -199,10 +223,10 @@ uint8_t TLV493D::update()
   m_dPhi_xz = atan2_remaped(m_dBx, m_dBz);
   m_dMag_2 = m_dBx * m_dBx + m_dBy * m_dBy + m_dBz * m_dBz;
 
-  if (m_rbuffer[3] & B00000011 != 0)
+  if ((m_rbuffer[3] & B00000011 != 0) || (m_rbuffer[5] & B00010000 != 0))
   {
     // If bits are not 0, TLV is still reading Bx, By, Bz, or T
-    return 0x01;
+    return 0x02;
   }
   else
   {

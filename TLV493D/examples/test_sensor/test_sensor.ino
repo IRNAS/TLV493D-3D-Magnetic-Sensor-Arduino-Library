@@ -21,7 +21,7 @@ void setup()
   digitalWrite(sensor2_pwr_pin, LOW);
   digitalWrite(i2c_sda, LOW);
 
-  delay(100);
+  delay(500);
 
   //init sensor1
   digitalWrite(sensor1_pwr_pin, HIGH);
@@ -48,8 +48,8 @@ void setup()
 
 void loop()
 {
-  sensor1.update();
-  Serial.println("sensor1:");
+  Serial.print("sensor1: 0x");
+  Serial.println(sensor1.update());
 
   Serial.print(sensor1.m_dBx);
   Serial.print(";");//\t");
@@ -67,8 +67,8 @@ void loop()
   Serial.print(";");//\t");
   Serial.println(sensor1.m_dMag_2);
 
-  sensor2.update();
-  Serial.println("sensor2:");
+  Serial.print("sensor2: 0x");
+  Serial.println(sensor2.update());
 
   Serial.print(sensor2.m_dBx);
   Serial.print(";");//\t");

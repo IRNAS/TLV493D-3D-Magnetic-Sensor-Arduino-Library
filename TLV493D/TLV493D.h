@@ -65,19 +65,19 @@ class TLV493D
     // Destructor
     ~TLV493D();
 
-	// Initializes the sensor
+    // Initializes the sensor
     uint8_t init(int pwrPinLevel);
 
-	// Deinitializes the sensor
+    // Deinitializes the sensor
     void deinit();
 
-	// Reads new data from the sensor.
+    // Reads new data from the sensor.
     uint8_t update();
 
 
   private:
 
-	// Decodes data in read buffer
+    // Decodes data in read buffer
     static int decodeX(int a, int b);
     static int decodeY(int a, int b);
     static int decodeZ(int a, int b);
@@ -88,8 +88,11 @@ class TLV493D
     // Calculate temperature in degrees Celsius
     static double convertToCelsius(const int a);
 
-	// Calculates angle in radians between 0 and 2PI
+    // Calculates angle in radians between 0 and 2PI
     static double atan2_remaped(double x, double y);
+
+    // Print content of all registers
+    void dump_registers();
 };
 
 #endif
