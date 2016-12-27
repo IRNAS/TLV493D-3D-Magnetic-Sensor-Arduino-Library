@@ -105,13 +105,13 @@ void TLV493D::dump_registers()
   Serial.println("Dumping read buffer:");
   for (int i = 0; i < sizeof(m_rbuffer); i++)
   {
-    Serial.println(m_rbuffer[i]);
+    Serial.println(m_rbuffer[i], BIN);
   }
 
   Serial.println("Dumping write buffer:");
   for (int i = 0; i < sizeof(m_wbuffer); i++)
   {
-    Serial.println(m_wbuffer[i]);
+    Serial.println(m_wbuffer[i], BIN);
   }
 }
 
@@ -139,7 +139,12 @@ uint8_t TLV493D::init(int pwrPinLevel)
     m_rbuffer[i] = Wire.read();
   }
 
-//  dump_registers();
+  //dump_registers();
+
+  for(int i = 0; i < 5; i++)
+  {
+    if(m_rbuffer[i] != 0x00) return 0x07;
+  }
 
   // Write Register 0H is non configurable.  Set all bits to 0.
   m_wbuffer[0] = B00000000;
