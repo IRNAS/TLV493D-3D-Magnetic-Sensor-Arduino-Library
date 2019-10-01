@@ -156,7 +156,7 @@ uint8_t TLV493D::init(int pwrPinLevel)
   m_wbuffer[2] = m_rbuffer[8];
 
   // Read Register 9H 4:0 -> Write Register 3H 4:0 (Mod2).
-  m_wbuffer[3] = m_rbuffer[9] & B00001111;
+  m_wbuffer[3] = m_rbuffer[9] & B00011111;
 
   // Set Power Mode (ulpm, lpm, fm, pd).
   for (int i = 0; i < sizeof(m_wbuffer); i++)
